@@ -68,7 +68,7 @@ const PROJECTS = [
     title: 'Meal Planner',
     desc: 'Smart meal prep and macro tracking software. Automate grocery list generation and track daily caloric intakes and nutrition metrics.',
     stack: ['Python', 'Flask', 'PostgreSQL', 'CSS3'],
-    url: 'https://pantry-toplate.netlify.app/'
+    url: 'https://flask-demoenv.onrender.com/'
   }
 ];
 
