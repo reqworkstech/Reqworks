@@ -48,12 +48,12 @@ export default function Features() {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            height: `${viewportHeight}px`,
+            height: 'calc(var(--feat-item-height, 56px) * 7)',
             position: 'relative'
           }}>
             {/* Viewport Mask for scrolling text */}
             <div style={{
-              height: `${viewportHeight}px`,
+              height: 'calc(var(--feat-item-height, 56px) * 7)',
               overflow: 'hidden',
               position: 'relative',
               display: 'flex',
@@ -63,7 +63,7 @@ export default function Features() {
               {/* Vertical Scroll List Container */}
               <div style={{
                 // Offset by viewport center (3 * itemHeight) minus activeIndex * itemHeight
-                transform: `translateY(${(3 * itemHeight) - activeIndex * itemHeight}px)`,
+                transform: `translateY(calc((3 * var(--feat-item-height, 56px)) - (${activeIndex} * var(--feat-item-height, 56px))))`,
                 transition: 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 display: 'flex',
                 flexDirection: 'column'
@@ -73,37 +73,37 @@ export default function Features() {
                   const distance = Math.abs(activeIndex - idx);
                   
                   let color = '#334155'; // Faded gray for distant items
-                  let fontSize = '1.1rem';
+                  let fontSize = 'var(--feat-font-dist, 1.1rem)';
                   let opacity = 0.15;
                   let fontWeight = 600;
                   let scale = 0.9;
-
+ 
                   if (isActive) {
                     color = '#10B981'; // Bright green highlight at the center
-                    fontSize = '1.9rem';
+                    fontSize = 'var(--feat-font-active, 1.9rem)';
                     opacity = 1;
                     fontWeight = 800;
                     scale = 1.05;
                   } else if (distance === 1) {
                     color = '#64748B'; // Muted silver for adjacent items
-                    fontSize = '1.4rem';
+                    fontSize = 'var(--feat-font-adj, 1.4rem)';
                     opacity = 0.45;
                     fontWeight = 700;
                     scale = 0.98;
                   } else if (distance === 2) {
                     color = '#475569';
-                    fontSize = '1.2rem';
+                    fontSize = 'var(--feat-font-dist, 1.2rem)';
                     opacity = 0.25;
                     fontWeight = 600;
                     scale = 0.92;
                   }
-
+ 
                   return (
                     <div
                       key={idx}
                       onClick={() => setActiveIndex(idx)}
                       style={{
-                        height: `${itemHeight}px`,
+                        height: 'var(--feat-item-height, 56px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'flex-start',
@@ -112,7 +112,7 @@ export default function Features() {
                         fontWeight: fontWeight,
                         opacity: opacity,
                         transform: `scale(${scale})`,
-                        transformOrigin: 'left center',
+                        transformOrigin: 'var(--feat-origin, left center)',
                         transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                         cursor: 'pointer',
                         whiteSpace: 'nowrap',
@@ -127,7 +127,7 @@ export default function Features() {
               </div>
             </div>
           </div>
-
+ 
           {/* Right Column: Compact Illustration Image */}
           <div style={{
             display: 'flex',
@@ -145,13 +145,27 @@ export default function Features() {
               }}
             />
           </div>
-
+ 
         </div>
-
+ 
       </div>
-
+ 
       <style>{`
+        :root {
+          --feat-item-height: 56px;
+          --feat-font-active: 1.9rem;
+          --feat-font-adj: 1.4rem;
+          --feat-font-dist: 1.1rem;
+          --feat-origin: left center;
+        }
         @media (max-width: 768px) {
+          :root {
+            --feat-item-height: 42px;
+            --feat-font-active: 1.25rem;
+            --feat-font-adj: 0.95rem;
+            --feat-font-dist: 0.8rem;
+            --feat-origin: center center;
+          }
           .split-features-layout {
             grid-template-columns: 1fr !important;
             gap: 24px !important;

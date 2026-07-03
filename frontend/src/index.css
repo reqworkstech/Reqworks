@@ -2603,8 +2603,8 @@ section { position: relative; overflow: hidden; }
     scroll-snap-type: x mandatory !important;
     gap: 16px !important;
     padding: 8px 16px 24px !important;
-    margin-left: -24px !important;
-    margin-right: -24px !important;
+    margin-left: -16px !important;
+    margin-right: -16px !important;
     scrollbar-width: none !important;
   }
   .landing-light-theme .audience-grid::-webkit-scrollbar {
@@ -2624,8 +2624,8 @@ section { position: relative; overflow: hidden; }
     scroll-snap-type: x mandatory !important;
     gap: 16px !important;
     padding: 8px 16px 24px !important;
-    margin-left: -24px !important;
-    margin-right: -24px !important;
+    margin-left: -16px !important;
+    margin-right: -16px !important;
     scrollbar-width: none !important;
   }
   .landing-light-theme .frameworks-grid::-webkit-scrollbar {
@@ -2644,8 +2644,8 @@ section { position: relative; overflow: hidden; }
     scroll-snap-type: x mandatory !important;
     gap: 16px !important;
     padding: 8px 16px 24px !important;
-    margin-left: -24px !important;
-    margin-right: -24px !important;
+    margin-left: -16px !important;
+    margin-right: -16px !important;
     scrollbar-width: none !important;
   }
   .landing-light-theme .projects-vertical-grid::-webkit-scrollbar {
@@ -2664,8 +2664,8 @@ section { position: relative; overflow: hidden; }
     scroll-snap-type: x mandatory !important;
     gap: 16px !important;
     padding: 8px 16px 24px !important;
-    margin-left: -24px !important;
-    margin-right: -24px !important;
+    margin-left: -16px !important;
+    margin-right: -16px !important;
     scrollbar-width: none !important;
   }
   .landing-light-theme .flow-grid::-webkit-scrollbar {

@@ -45,7 +45,7 @@ function LandingPage() {
         <GetStarted />
       </main>
       <Footer />
-      <OfferModal />
+      {/* <OfferModal /> */}
     </div>
   );
 }
