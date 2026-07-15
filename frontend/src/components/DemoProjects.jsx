@@ -44,7 +44,7 @@ const PROJECTS = [
     title: 'Flowgen',
     desc: 'MERN-based AI workflow automation engine. Build, visualize, and deploy complex backend workflows with drag-and-drop nodes in real-time.',
     stack: ['React', 'Tailwind', 'Node.js', 'MongoDB'],
-    url: 'https://flowgen-nine.vercel.app/'
+    url: 'https://flowgen-one.vercel.app/'
   },
   {
     title: 'Joyspoon',
@@ -56,7 +56,7 @@ const PROJECTS = [
     title: 'Pantry To Plate',
     desc: 'Transform your kitchen leftovers instantly. Log ingredients in your virtual pantry and receive custom recipes optimized by AI models.',
     stack: ['Django', 'React', 'MongoDB', 'Python'],
-    url: 'https://pantry-toplate.netlify.app/'
+    url: 'https://pantry-to-plate-ebon.vercel.app/'
   },
   {
     title: 'Capital Nest',
