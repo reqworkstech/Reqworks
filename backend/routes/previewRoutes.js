@@ -4,27 +4,30 @@ const rateLimit = require('express-rate-limit');
 const PreviewSubmission = require('../models/PreviewSubmission');
 const { getPremiumEmailLayout, dispatchEmail } = require('../services/emailService');
 
-// Custom URL validation helper
-const isUrlValid = (str) => {
-  if (!str) return true;
-  let target = str;
-  if (!/^https?:\/\//i.test(str)) {
-    target = 'http://' + str;
-  }
-  try {
-    const url = new URL(target);
-    return !!url.hostname && url.hostname.includes('.');
-  } catch (e) {
-    return false;
-  }
-};
-
 // Rate limiter: 5 requests per IP per hour
 const previewLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000,
   max: 5,
   message: { success: false, error: 'Too many requests from this IP, please try again later.' }
 });
+
+/**
+ * Fire-and-forget Telegram alert to admin channel
+ */
+const sendTelegramAlert = (message) => {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+
+  fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'Markdown' })
+  })
+    .then(r => r.json())
+    .then(d => { if (!d.ok) console.error('[PreviewLab] Telegram send failed:', d.description); })
+    .catch(err => console.error('[PreviewLab] Telegram error:', err.message));
+};
 
 /**
  * @route   POST /api/preview-lab/submit
@@ -34,28 +37,17 @@ router.post('/submit', previewLimiter, async (req, res) => {
   try {
     const { name, email, website, businessDescription, selectedSections, styleColors, referenceWebsite, honeypot } = req.body;
 
-    // 1. Silent rejection for honeypot filled (bots)
+    // 1. Silent honeypot rejection (bots)
     if (honeypot) {
-      console.log(`[PreviewLab] Bot detected via honeypot field. Silently ignoring submission.`);
       return res.json({ success: true, message: 'Thanks! Your preview will be emailed within 24 hours.' });
     }
 
     // 2. Server-side validation
-    if (!name || !name.trim()) {
-      return res.status(400).json({ success: false, error: 'Name is required.' });
-    }
-    if (!email || !email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
-      return res.status(400).json({ success: false, error: 'Valid email is required.' });
-    }
-    if (!businessDescription || !businessDescription.trim()) {
-      return res.status(400).json({ success: false, error: 'Business description is required.' });
-    }
-    if (!selectedSections || !Array.isArray(selectedSections) || selectedSections.length === 0) {
-      return res.status(400).json({ success: false, error: 'Please select at least one website section.' });
-    }
-    if (selectedSections.length > 3) {
-      return res.status(400).json({ success: false, error: 'Maximum 3 sections allowed.' });
-    }
+    if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'Name is required.' });
+    if (!email || !email.trim() || !/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ success: false, error: 'Valid email is required.' });
+    if (!businessDescription || !businessDescription.trim()) return res.status(400).json({ success: false, error: 'Business description is required.' });
+    if (!selectedSections || !Array.isArray(selectedSections) || selectedSections.length === 0) return res.status(400).json({ success: false, error: 'Please select at least one website section.' });
+    if (selectedSections.length > 3) return res.status(400).json({ success: false, error: 'Maximum 3 sections allowed.' });
 
     // No strict URL validation — website and referenceWebsite are optional freeform fields
 
@@ -70,100 +62,157 @@ router.post('/submit', previewLimiter, async (req, res) => {
       styleColors: styleColors ? styleColors.trim() : undefined,
       referenceWebsite: referenceWebsite ? referenceWebsite.trim() : undefined
     });
-
     await submission.save();
 
-    // 4. Client email - dispatch asynchronously in try/catch to avoid failing request on email fail
+    // 4. Client confirmation email — clean, visual, card-based
     try {
-      const clientSubject = 'Reqworks Preview Lab: Request Confirmed!';
+      const sectionBadges = selectedSections.map(s =>
+        `<span style="display:inline-block;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);color:#a78bfa;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin:3px 3px 3px 0;letter-spacing:0.4px;">${s}</span>`
+      ).join('');
+
       const clientBodyHtml = `
-        <p>Hi <strong>${name}</strong>,</p>
-        <p>Thanks for requesting a free website preview from the Reqworks Preview Lab! We've successfully received your details and our product engineering team is already analyzing your request.</p>
-        
-        <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 24px; margin: 24px 0;">
-          <h3 style="color: #8b5cf6; margin-top: 0; font-size: 16px;">What you will get:</h3>
-          <ul style="padding-left: 20px; color: #cbd5e1; margin: 8px 0;">
-            <li>A customized, interactive high-fidelity preview of your selected sections.</li>
-            <li>Clean, responsive modern layout tailored to your style inputs.</li>
-            <li>Access to inspect desktop and mobile versions.</li>
-          </ul>
-          <h3 style="color: #8b5cf6; margin-top: 16px; font-size: 16px;">Sections selected:</h3>
-          <p style="color: #fbbf24; font-weight: bold; margin: 8px 0;">${selectedSections.join(', ')}</p>
+        <p style="margin:0 0 24px 0;font-size:15px;color:#94a3b8;">Hi <strong style="color:#e2e8f0;">${name}</strong>,</p>
+
+        <!-- Hero confirmation banner -->
+        <div style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(99,102,241,0.1));border:1px solid rgba(139,92,246,0.25);border-radius:14px;padding:28px 24px;text-align:center;margin-bottom:24px;">
+          <div style="font-size:32px;margin-bottom:10px;">🎨</div>
+          <p style="font-size:18px;font-weight:800;color:#ffffff;margin:0 0 6px 0;letter-spacing:-0.3px;">Your preview is in the queue.</p>
+          <p style="font-size:13px;color:#94a3b8;margin:0;">Expect a real visual concept in your inbox within <strong style="color:#a78bfa;">24 hours</strong>.</p>
         </div>
 
-        <p>Your interactive preview will be ready and emailed to you within 24 hours.</p>
-        <p>In the meantime, feel free to explore our portfolio and see examples of premium websites we have built for clients.</p>
+        <!-- Section cards grid -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px 22px;margin-bottom:20px;">
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#64748b;margin:0 0 12px 0;">Sections Requested</p>
+          <div>${sectionBadges}</div>
+        </div>
+
+        <!-- 3 feature cards in a row -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+          <tr>
+            <td width="33%" style="padding:0 5px 0 0;vertical-align:top;">
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 12px;text-align:center;">
+                <div style="font-size:20px;margin-bottom:6px;">📐</div>
+                <p style="font-size:11px;font-weight:700;color:#e2e8f0;margin:0 0 3px 0;">High-fidelity</p>
+                <p style="font-size:10px;color:#64748b;margin:0;">Desktop & mobile mockups</p>
+              </div>
+            </td>
+            <td width="33%" style="padding:0 3px;vertical-align:top;">
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 12px;text-align:center;">
+                <div style="font-size:20px;margin-bottom:6px;">⚡</div>
+                <p style="font-size:11px;font-weight:700;color:#e2e8f0;margin:0 0 3px 0;">24 hours</p>
+                <p style="font-size:10px;color:#64748b;margin:0;">Turnaround guaranteed</p>
+              </div>
+            </td>
+            <td width="33%" style="padding:0 0 0 5px;vertical-align:top;">
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 12px;text-align:center;">
+                <div style="font-size:20px;margin-bottom:6px;">💰</div>
+                <p style="font-size:11px;font-weight:700;color:#e2e8f0;margin:0 0 3px 0;">Zero cost</p>
+                <p style="font-size:10px;color:#64748b;margin:0;">No commitment required</p>
+              </div>
+            </td>
+          </tr>
+        </table>
       `;
 
-      const clientHtmlContent = getPremiumEmailLayout(
-        clientSubject,
+      const clientHtml = getPremiumEmailLayout(
+        'Confirmed.',
         clientBodyHtml,
         'Visit Reqworks',
         'https://reqworks.in',
         '#8b5cf6',
-        'This email was sent in response to your Reqworks Preview Lab request.'
+        'Sent because you submitted a Preview Lab request on reqworks.in'
       );
 
-      // Replaced Loom placeholder with reqworks.in — actual preview delivery link sent separately
-
-      dispatchEmail({
-        to: email.trim(),
-        subject: clientSubject,
-        html: clientHtmlContent,
-        serviceName: 'Client Preview Confirmation'
-      });
+      dispatchEmail({ to: email.trim(), subject: 'Your preview request is confirmed — Reqworks', html: clientHtml, serviceName: 'Client Preview Confirmation' });
     } catch (emailErr) {
-      console.error('[PreviewLab] Error triggering client confirmation email:', emailErr);
+      console.error('[PreviewLab] Client email error:', emailErr);
     }
 
-    // 5. Admin email notification
+    // 5. Admin notification email — data-dense info card layout
     try {
       const adminEmail = process.env.ADMIN_EMAIL || 'Reqworks.tech@gmail.com';
-      const adminSubject = `🧪 New Preview Lab Lead: ${name}`;
+
       const adminBodyHtml = `
-        <h2 style="color: #ffffff; margin-bottom: 20px;">New Preview Lab Submission</h2>
-        <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 24px; color: #cbd5e1; line-height: 1.6;">
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Website:</strong> ${website || 'None'}</p>
-          <p><strong>Business Description:</strong><br/>${businessDescription.replace(/\n/g, '<br/>')}</p>
-          <p><strong>Selected Sections:</strong> ${selectedSections.join(', ')}</p>
-          <p><strong>Style & Colors Notes:</strong><br/>${styleColors || 'None'}</p>
-          <p><strong>Reference Website:</strong> ${referenceWebsite || 'None'}</p>
+        <!-- Lead header banner -->
+        <div style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(251,191,36,0.08));border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:18px 20px;margin-bottom:20px;display:flex;align-items:center;">
+          <span style="font-size:28px;margin-right:14px;">🧪</span>
+          <div>
+            <p style="font-size:16px;font-weight:800;color:#ffffff;margin:0 0 2px 0;">New Preview Lab Lead</p>
+            <p style="font-size:12px;color:#94a3b8;margin:0;">${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST</p>
+          </div>
         </div>
+
+        <!-- Contact info row -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+          <tr>
+            <td width="50%" style="padding:0 6px 0 0;vertical-align:top;">
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;">
+                <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;margin:0 0 5px 0;">Client</p>
+                <p style="font-size:14px;font-weight:700;color:#f1f5f9;margin:0;">${name}</p>
+                <p style="font-size:12px;color:#8b5cf6;margin:3px 0 0 0;">${email}</p>
+              </div>
+            </td>
+            <td width="50%" style="padding:0 0 0 6px;vertical-align:top;">
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;">
+                <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;margin:0 0 5px 0;">Website</p>
+                <p style="font-size:13px;color:#f1f5f9;margin:0;word-break:break-all;">${website || '—'}</p>
+                <p style="font-size:10px;color:#64748b;margin:3px 0 0 0;">Reference: ${referenceWebsite || '—'}</p>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Sections badges -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+          <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;margin:0 0 8px 0;">Sections Selected</p>
+          <div>${selectedSections.map(s => `<span style="display:inline-block;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin:2px 4px 2px 0;">${s}</span>`).join('')}</div>
+        </div>
+
+        <!-- Business description -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+          <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;margin:0 0 6px 0;">Business Description</p>
+          <p style="font-size:13px;color:#cbd5e1;margin:0;line-height:1.6;">${businessDescription.replace(/\n/g, '<br/>')}</p>
+        </div>
+
+        <!-- Style notes -->
+        ${styleColors ? `
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;">
+          <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;margin:0 0 6px 0;">Style & Brand Notes</p>
+          <p style="font-size:13px;color:#cbd5e1;margin:0;line-height:1.6;">${styleColors}</p>
+        </div>` : ''}
       `;
 
-      const adminHtmlContent = getPremiumEmailLayout(
-        adminSubject,
+      const adminHtml = getPremiumEmailLayout(
+        'New Lead.',
         adminBodyHtml,
-        'Manage Leads',
+        'Open Dashboard',
         `${process.env.CLIENT_URL || 'https://www.reqworks.in'}/admin/dashboard`,
         '#f59e0b',
-        'Reqworks Lead Alert System'
+        'Reqworks Preview Lab — Admin Alert System'
       );
 
-      dispatchEmail({
-        to: adminEmail,
-        subject: adminSubject,
-        html: adminHtmlContent,
-        serviceName: 'Admin Preview Alert'
-      });
+      dispatchEmail({ to: adminEmail, subject: `🧪 Preview Lab Lead: ${name} — Reqworks`, html: adminHtml, serviceName: 'Admin Preview Alert' });
 
-      // Log a stunning card in the console in dev mode
+      // 6. Telegram admin alert (fire-and-forget)
+      const telegramMsg =
+        `🧪 *NEW PREVIEW LAB LEAD*\n\n` +
+        `*Name:* ${name}\n` +
+        `*Email:* ${email}\n` +
+        `*Website:* ${website || '—'}\n` +
+        `*Sections:* ${selectedSections.join(', ')}\n` +
+        `*Style:* ${styleColors || '—'}\n` +
+        `*Ref Site:* ${referenceWebsite || '—'}\n\n` +
+        `📝 *Description:*\n${businessDescription.slice(0, 200)}${businessDescription.length > 200 ? '...' : ''}\n\n` +
+        `👉 [Open Dashboard](${process.env.CLIENT_URL || 'https://www.reqworks.in'}/admin/dashboard)`;
+
+      sendTelegramAlert(telegramMsg);
+
+      // Dev console log
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`\n🧪 [PREVIEW LAB FULL FORM SUBMISSION] 🧪`);
-        console.log(`--------------------------------------------------`);
-        console.log(`Client Name: ${name}`);
-        console.log(`Email:       ${email}`);
-        console.log(`Website:     ${website || 'N/A'}`);
-        console.log(`Sections:    ${selectedSections.join(', ')}`);
-        console.log(`Style:       ${styleColors || 'N/A'}`);
-        console.log(`Ref Site:    ${referenceWebsite || 'N/A'}`);
-        console.log(`Description: ${businessDescription}`);
-        console.log(`--------------------------------------------------\n`);
+        console.log(`\n🧪 [PREVIEW LAB SUBMISSION]\nName: ${name} | Email: ${email} | Sections: ${selectedSections.join(', ')}\n`);
       }
-    } catch (adminEmailErr) {
-      console.error('[PreviewLab] Error triggering admin notification email:', adminEmailErr);
+    } catch (adminErr) {
+      console.error('[PreviewLab] Admin notification error:', adminErr);
     }
 
     return res.json({ success: true, message: 'Thanks! Your preview will be emailed within 24 hours.' });
@@ -179,83 +228,21 @@ router.post('/submit', previewLimiter, async (req, res) => {
  */
 router.post('/callback', previewLimiter, async (req, res) => {
   try {
-    const { name, phone, preferredTime, honeypot } = req.body;
+    const { name, phone, honeypot } = req.body;
+    if (honeypot) return res.json({ success: true });
+    if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'Name is required.' });
+    if (!phone || !phone.trim()) return res.status(400).json({ success: false, error: 'Phone number is required.' });
 
-    // 1. Silent rejection for honeypot filled (bots)
-    if (honeypot) {
-      console.log(`[PreviewLab] Bot detected via honeypot field on callback route. Silently ignoring.`);
-      return res.json({ success: true, message: 'Thanks! We\'ll call you within 24 hours.' });
-    }
-
-    // 2. Server-side validation
-    if (!name || !name.trim()) {
-      return res.status(400).json({ success: false, error: 'Name is required.' });
-    }
-    if (!phone || !phone.trim()) {
-      return res.status(400).json({ success: false, error: 'Phone number is required.' });
-    }
-
-    const validTimes = ['morning', 'afternoon', 'evening', null];
-    if (preferredTime && !validTimes.includes(preferredTime)) {
-      return res.status(400).json({ success: false, error: 'Invalid preferred time.' });
-    }
-
-    // 3. Save to database
-    const submission = new PreviewSubmission({
-      type: 'callback_request',
-      name: name.trim(),
-      phone: phone.trim(),
-      preferredTime: preferredTime || null
-    });
-
+    const submission = new PreviewSubmission({ type: 'callback', name: name.trim(), phone: phone.trim() });
     await submission.save();
 
-    // 4. Admin email notification (no client confirmation email is sent for callbacks)
-    try {
-      const adminEmail = process.env.ADMIN_EMAIL || 'Reqworks.tech@gmail.com';
-      const adminSubject = `📞 New Callback Request: ${name}`;
-      const adminBodyHtml = `
-        <h2 style="color: #ffffff; margin-bottom: 20px;">New Callback Request</h2>
-        <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 24px; color: #cbd5e1; line-height: 1.6;">
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Phone:</strong> ${phone}</p>
-          <p><strong>Preferred Time:</strong> ${preferredTime ? preferredTime.charAt(0).toUpperCase() + preferredTime.slice(1) : 'Anytime'}</p>
-        </div>
-      `;
+    // Telegram callback alert
+    sendTelegramAlert(`📞 *CALLBACK REQUEST*\n\n*Name:* ${name}\n*Phone:* ${phone}\n\n_Reply to this lead within 1 hour._`);
 
-      const adminHtmlContent = getPremiumEmailLayout(
-        adminSubject,
-        adminBodyHtml,
-        'Call Client',
-        `tel:${phone}`,
-        '#10b981',
-        'Reqworks Callback Alert System'
-      );
-
-      dispatchEmail({
-        to: adminEmail,
-        subject: adminSubject,
-        html: adminHtmlContent,
-        serviceName: 'Admin Callback Alert'
-      });
-
-      // Log a stunning card in the console in dev mode
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`\n📞 [PREVIEW LAB CALLBACK REQUEST] 📞`);
-        console.log(`--------------------------------------------------`);
-        console.log(`Client Name:    ${name}`);
-        console.log(`Phone:          ${phone}`);
-        console.log(`Preferred Time: ${preferredTime || 'Anytime'}`);
-        console.log(`--------------------------------------------------\n`);
-      }
-    } catch (adminEmailErr) {
-      console.error('[PreviewLab] Error triggering admin callback notification email:', adminEmailErr);
-    }
-
-    return res.json({ success: true, message: 'Thanks! We\'ll call you within 24 hours.' });
+    return res.json({ success: true, message: 'Got it! We will call you within a few hours.' });
   } catch (err) {
-    console.error('Submit callback error:', err);
-    res.status(500).json({ success: false, error: 'Server error processing callback request.' });
+    console.error('Callback form error:', err);
+    res.status(500).json({ success: false, error: 'Server error.' });
   }
 });
 

@@ -105,150 +105,101 @@ const dispatchEmail = (options) => {
 };
 
 /**
- * Shared HTML email layout helper to construct premium, high-converting dark-themed emails.
+ * Shared HTML email layout — clean dark theme, bold single-word title, card-ready body.
  */
 const getPremiumEmailLayout = (title, bodyHtml, ctaText, ctaUrl, accentColor = '#8b5cf6', footerText = '') => {
   return `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${title}</title>
-      <style>
-        body {
-          margin: 0;
-          padding: 0;
-          width: 100% !important;
-          height: 100% !important;
-          background-color: #090a0f;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-          -webkit-font-smoothing: antialiased;
-        }
-        .wrapper {
-          width: 100%;
-          background-color: #090a0f;
-          padding: 40px 20px;
-          box-sizing: border-box;
-        }
-        .container {
-          max-width: 580px;
-          margin: 0 auto;
-          background-color: #11131a;
-          border-radius: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-          overflow: hidden;
-        }
-        .header-bar {
-          height: 4px;
-          background: ${accentColor};
-        }
-        .content {
-          padding: 40px 35px 35px 35px;
-        }
-        .logo-container {
-          text-align: center;
-          margin-bottom: 30px;
-        }
-        .logo-text {
-          font-size: 24px;
-          font-weight: 800;
-          color: #ffffff;
-          letter-spacing: -0.5px;
-          text-decoration: none;
-        }
-        .logo-dot {
-          color: ${accentColor};
-        }
-        .email-title {
-          font-size: 22px;
-          font-weight: 700;
-          color: #ffffff;
-          line-height: 1.3;
-          margin: 0 0 24px 0;
-          text-align: center;
-        }
-        .email-body {
-          font-size: 15px;
-          line-height: 1.6;
-          color: #cbd5e1;
-          margin-bottom: 30px;
-        }
-        .cta-container {
-          text-align: center;
-          margin: 32px 0;
-        }
-        .btn {
-          display: inline-block;
-          background: ${accentColor};
-          color: #ffffff !important;
-          text-decoration: none;
-          padding: 12px 28px;
-          border-radius: 8px;
-          font-size: 15px;
-          font-weight: 600;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-          transition: all 0.2s ease;
-        }
-        .divider {
-          height: 1px;
-          background-color: rgba(255, 255, 255, 0.08);
-          margin: 30px 0;
-        }
-        .footer {
-          font-size: 11px;
-          color: #64748b;
-          text-align: center;
-          line-height: 1.6;
-        }
-        .footer a {
-          color: #94a3b8;
-          text-decoration: none;
-        }
-        .footer a:hover {
-          text-decoration: underline;
-        }
-        @media only screen and (max-width: 480px) {
-          .content {
-            padding: 30px 20px 25px 20px;
-          }
-          .email-title {
-            font-size: 20px;
-          }
-        }
-      </style>
     </head>
-    <body>
-      <div class="wrapper">
-        <div class="container">
-          <div class="header-bar"></div>
-          <div class="content">
-            <div class="logo-container">
-              <span class="logo-text">Reqworks<span class="logo-dot">.</span></span>
-            </div>
-            <h1 class="email-title">${title}</h1>
-            <div class="email-body">
-              ${bodyHtml}
-            </div>
-            ${ctaText && ctaUrl ? `
-            <div class="cta-container">
-              <a href="${ctaUrl}" class="btn">${ctaText}</a>
-            </div>
-            ` : ''}
-            <div class="divider"></div>
-            <div class="footer">
-              ${footerText || `This is an automated operational notification sent regarding your account actions.`}
-              <br>
-              <span style="margin-top: 8px; display: inline-block;">&copy; ${new Date().getFullYear()} Reqworks. All rights reserved.</span>
-            </div>
-          </div>
-        </div>
-      </div>
+    <body style="margin:0;padding:0;background-color:#060811;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#060811;padding:40px 16px;">
+        <tr>
+          <td align="center">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+              <!-- Gradient top bar -->
+              <tr>
+                <td style="height:3px;background:linear-gradient(90deg,${accentColor},#6366f1,#3b82f6);border-radius:3px 3px 0 0;"></td>
+              </tr>
+
+              <!-- Card body -->
+              <tr>
+                <td style="background-color:#0d0f1a;border:1px solid rgba(255,255,255,0.07);border-top:none;border-radius:0 0 16px 16px;padding:36px 32px 32px;">
+
+                  <!-- Logo -->
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                    <tr>
+                      <td align="center">
+                        <span style="font-size:20px;font-weight:900;color:#ffffff;letter-spacing:-0.5px;text-decoration:none;">Reqworks<span style="color:${accentColor};">.</span></span>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Bold single-word title -->
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                    <tr>
+                      <td align="center">
+                        <h1 style="font-size:42px;font-weight:900;color:#ffffff;margin:0;letter-spacing:-2px;line-height:1;">${title}</h1>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Body content (card-based HTML injected here) -->
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:4px;">
+                    <tr>
+                      <td style="font-size:14px;line-height:1.6;color:#94a3b8;">
+                        ${bodyHtml}
+                      </td>
+                    </tr>
+                  </table>
+
+                  ${ctaText && ctaUrl ? `
+                  <!-- CTA button -->
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+                    <tr>
+                      <td align="center">
+                        <a href="${ctaUrl}" style="display:inline-block;background:${accentColor};color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.2px;">
+                          ${ctaText} →
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  ` : ''}
+
+                  <!-- Divider -->
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 20px;">
+                    <tr>
+                      <td style="height:1px;background:rgba(255,255,255,0.06);"></td>
+                    </tr>
+                  </table>
+
+                  <!-- Footer -->
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center" style="font-size:11px;color:#334155;line-height:1.6;">
+                        ${footerText}<br>
+                        <span style="margin-top:4px;display:inline-block;">&copy; ${new Date().getFullYear()} Reqworks. All rights reserved. &nbsp;·&nbsp; <a href="https://reqworks.in" style="color:#475569;text-decoration:none;">reqworks.in</a></span>
+                      </td>
+                    </tr>
+                  </table>
+
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
     </body>
     </html>
   `;
 };
+
 
 const sendVerificationEmail = async (email, name, token, otp) => {
   const verifyUrl = `${process.env.CLIENT_URL || 'https://www.reqworks.in'}/verify-email/${token}`;
