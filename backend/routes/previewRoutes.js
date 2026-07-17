@@ -92,17 +92,19 @@ router.post('/submit', previewLimiter, async (req, res) => {
         </div>
 
         <p>Your interactive preview will be ready and emailed to you within 24 hours.</p>
-        <p>In the meantime, feel free to watch a short explainer video showing how we design and build premium web applications.</p>
+        <p>In the meantime, feel free to explore our portfolio and see examples of premium websites we have built for clients.</p>
       `;
 
       const clientHtmlContent = getPremiumEmailLayout(
         clientSubject,
         clientBodyHtml,
-        'Watch Preview Explainer',
-        'https://www.loom.com/share/placeholder-stunning-landing-page-video',
+        'Visit Reqworks',
+        'https://reqworks.in',
         '#8b5cf6',
         'This email was sent in response to your Reqworks Preview Lab request.'
       );
+
+      // Replaced Loom placeholder with reqworks.in — actual preview delivery link sent separately
 
       dispatchEmail({
         to: email.trim(),

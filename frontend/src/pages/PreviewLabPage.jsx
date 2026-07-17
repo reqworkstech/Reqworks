@@ -1113,7 +1113,12 @@ export default function PreviewLabPage() {
                       </div>
 
                       <div className="form-group">
-                        <label className="form-label">Select Sections (Max 3)<span>*</span></label>
+                        <label className="form-label">
+                          Select Sections<span>*</span>
+                          <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 8 }}>
+                            ({selectedSections.length}/3 selected)
+                          </span>
+                        </label>
                         <div className="sections-items-list">
                           {SECTIONS.map((sec) => {
                             const isSelected = selectedSections.includes(sec.label);
@@ -1121,10 +1126,13 @@ export default function PreviewLabPage() {
                             const isDisabled = isMaxReached && !isSelected;
 
                             return (
-                              <div
+                              <button
+                                type="button"
                                 key={sec.id}
-                                onClick={() => !isDisabled && handleSectionToggle(sec.label)}
+                                onClick={() => handleSectionToggle(sec.label)}
+                                disabled={isDisabled}
                                 className={`section-item-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                                style={{ width: '100%', textAlign: 'left' }}
                               >
                                 <div style={{ textAlign: 'left' }}>
                                   <div className="section-item-label">{sec.label}</div>
@@ -1133,11 +1141,17 @@ export default function PreviewLabPage() {
                                 <div className="check-box-element">
                                   {isSelected && <Check size={8} style={{ color: '#ffffff' }} />}
                                 </div>
-                              </div>
+                              </button>
                             );
                           })}
                         </div>
+                        {selectedSections.length === 3 && (
+                          <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 6 }}>
+                            Max 3 reached — deselect one to change your pick.
+                          </p>
+                        )}
                       </div>
+
                     </div>
                   )}
 
