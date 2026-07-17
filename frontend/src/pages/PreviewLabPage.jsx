@@ -95,23 +95,19 @@ export default function PreviewLabPage() {
     setMainError('');
     if (step === 1) {
       if (!mainForm.name.trim()) {
-        setMainError('Name is required.');
         triggerToast('Name is required.', 'error');
         return false;
       }
       if (!mainForm.email.trim() || !/^\S+@\S+\.\S+$/.test(mainForm.email)) {
-        setMainError('Valid email address is required.');
-        triggerToast('Valid email address is required.', 'error');
+        triggerToast('Please enter a valid email address.', 'error');
         return false;
       }
     } else if (step === 2) {
       if (!mainForm.businessDescription.trim()) {
-        setMainError('Business description is required.');
         triggerToast('Business description is required.', 'error');
         return false;
       }
       if (selectedSections.length === 0) {
-        setMainError('Please select at least one website section to preview.');
         triggerToast('Select at least one website section.', 'error');
         return false;
       }
@@ -166,8 +162,7 @@ export default function PreviewLabPage() {
       }
     } catch (err) {
       setMainLoading(false);
-      setMainError('Network error. Please check your connection.');
-      triggerToast('Network error. Please check your connection.', 'error');
+      triggerToast('Unable to submit. Please try again in a moment.', 'error');
     }
   };
 

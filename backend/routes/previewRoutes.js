@@ -57,13 +57,7 @@ router.post('/submit', previewLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Maximum 3 sections allowed.' });
     }
 
-    // URL validations
-    if (website && !isUrlValid(website)) {
-      return res.status(400).json({ success: false, error: 'Invalid current website URL.' });
-    }
-    if (referenceWebsite && !isUrlValid(referenceWebsite)) {
-      return res.status(400).json({ success: false, error: 'Invalid reference website URL.' });
-    }
+    // No strict URL validation — website and referenceWebsite are optional freeform fields
 
     // 3. Save to database
     const submission = new PreviewSubmission({
