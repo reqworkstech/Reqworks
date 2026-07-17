@@ -332,4 +332,4 @@ const sendPasswordResetEmail = async (email, name, token) => {
   });
 };
 
-module.exports = { sendVerificationEmail, sendPasswordResetEmail, getPremiumEmailLayout };
+module.exports = { sendVerificationEmail, sendPasswordResetEmail, getPremiumEmailLayout, dispatchEmail };

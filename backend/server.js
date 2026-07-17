@@ -10,6 +10,7 @@ const rateLimit = require('express-rate-limit');
 
 const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
+const previewRoutes = require('./routes/previewRoutes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -82,6 +83,7 @@ connectDB();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/preview-lab', previewRoutes);
 
 // Health check endpoint
 const getHealth = (req, res) => {
