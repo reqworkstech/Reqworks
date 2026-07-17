@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const TECH_BADGES = [
   { name: 'React', img: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg' },
@@ -134,15 +135,15 @@ export default function Hero() {
           }}>
             Book Your Project
           </a>
-          <a href="#flow" className="btn btn-tail-outline hero-explore-btn" style={{
+          <Link to="/preview-lab" className="btn btn-tail-outline hero-explore-btn" style={{
             padding: '12px 28px',
             fontSize: '0.92rem',
             borderRadius: '8px',
             fontWeight: 600,
             fontFamily: "'Inter', sans-serif"
           }}>
-            Explore Workflow
-          </a>
+            Get Previews
+          </Link>
         </div>
 
       </div>

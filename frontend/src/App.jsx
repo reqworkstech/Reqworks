@@ -30,6 +30,7 @@ import AdminDashboard from './pages/dashboard/AdminDashboard';
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
 import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/legal/TermsOfServicePage';
+import PreviewLabPage from './pages/PreviewLabPage';
 
 function LandingPage() {
   return (
@@ -54,6 +55,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/preview-lab" element={<PreviewLabPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route path="/terms-of-service" element={<TermsOfServicePage />} />
       <Route path="/register" element={<RegisterPage />} />
