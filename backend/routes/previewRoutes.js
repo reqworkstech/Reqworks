@@ -64,54 +64,13 @@ router.post('/submit', previewLimiter, async (req, res) => {
     });
     await submission.save();
 
-    // 4. Client confirmation email — clean, visual, card-based
+    // 4. Client confirmation email — ultra-minimal, clean confirmation
     try {
-      const sectionBadges = selectedSections.map(s =>
-        `<span style="display:inline-block;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);color:#a78bfa;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin:3px 3px 3px 0;letter-spacing:0.4px;">${s}</span>`
-      ).join('');
-
       const clientBodyHtml = `
-        <p style="margin:0 0 24px 0;font-size:15px;color:#94a3b8;">Hi <strong style="color:#e2e8f0;">${name}</strong>,</p>
-
-        <!-- Hero confirmation banner -->
-        <div style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(99,102,241,0.1));border:1px solid rgba(139,92,246,0.25);border-radius:14px;padding:28px 24px;text-align:center;margin-bottom:24px;">
-          <div style="font-size:32px;margin-bottom:10px;">🎨</div>
-          <p style="font-size:18px;font-weight:800;color:#ffffff;margin:0 0 6px 0;letter-spacing:-0.3px;">Your preview is in the queue.</p>
-          <p style="font-size:13px;color:#94a3b8;margin:0;">Expect a real visual concept in your inbox within <strong style="color:#a78bfa;">24 hours</strong>.</p>
-        </div>
-
-        <!-- Section cards grid -->
-        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px 22px;margin-bottom:20px;">
-          <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#64748b;margin:0 0 12px 0;">Sections Requested</p>
-          <div>${sectionBadges}</div>
-        </div>
-
-        <!-- 3 feature cards in a row -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-          <tr>
-            <td width="33%" style="padding:0 5px 0 0;vertical-align:top;">
-              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 12px;text-align:center;">
-                <div style="font-size:20px;margin-bottom:6px;">📐</div>
-                <p style="font-size:11px;font-weight:700;color:#e2e8f0;margin:0 0 3px 0;">High-fidelity</p>
-                <p style="font-size:10px;color:#64748b;margin:0;">Desktop & mobile mockups</p>
-              </div>
-            </td>
-            <td width="33%" style="padding:0 3px;vertical-align:top;">
-              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 12px;text-align:center;">
-                <div style="font-size:20px;margin-bottom:6px;">⚡</div>
-                <p style="font-size:11px;font-weight:700;color:#e2e8f0;margin:0 0 3px 0;">24 hours</p>
-                <p style="font-size:10px;color:#64748b;margin:0;">Turnaround guaranteed</p>
-              </div>
-            </td>
-            <td width="33%" style="padding:0 0 0 5px;vertical-align:top;">
-              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 12px;text-align:center;">
-                <div style="font-size:20px;margin-bottom:6px;">💰</div>
-                <p style="font-size:11px;font-weight:700;color:#e2e8f0;margin:0 0 3px 0;">Zero cost</p>
-                <p style="font-size:10px;color:#64748b;margin:0;">No commitment required</p>
-              </div>
-            </td>
-          </tr>
-        </table>
+        <p style="margin:0 0 6px 0;font-size:15px;color:#94a3b8;">Hi <strong style="color:#e2e8f0;">${name}</strong>,</p>
+        <p style="margin:0 0 0 0;font-size:14px;color:#64748b;line-height:1.7;">
+          We've received your preview request. Our team is on it — expect a custom visual concept in your inbox within <strong style="color:#a78bfa;">24 hours</strong>.
+        </p>
       `;
 
       const clientHtml = getPremiumEmailLayout(
@@ -123,7 +82,7 @@ router.post('/submit', previewLimiter, async (req, res) => {
         'Sent because you submitted a Preview Lab request on reqworks.in'
       );
 
-      dispatchEmail({ to: email.trim(), subject: 'Your preview request is confirmed — Reqworks', html: clientHtml, serviceName: 'Client Preview Confirmation' });
+      dispatchEmail({ to: email.trim(), subject: 'Preview request confirmed — Reqworks', html: clientHtml, serviceName: 'Client Preview Confirmation' });
     } catch (emailErr) {
       console.error('[PreviewLab] Client email error:', emailErr);
     }

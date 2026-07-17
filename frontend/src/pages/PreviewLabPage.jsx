@@ -90,7 +90,6 @@ export default function PreviewLabPage() {
     }
   };
 
-  // Stepper Validations
   const validateStep = (step) => {
     setMainError('');
     if (step === 1) {
@@ -109,6 +108,11 @@ export default function PreviewLabPage() {
       }
       if (selectedSections.length === 0) {
         triggerToast('Select at least one website section.', 'error');
+        return false;
+      }
+    } else if (step === 3) {
+      if (!mainForm.styleColors.trim()) {
+        triggerToast('Please describe your style or brand vision.', 'error');
         return false;
       }
     }
@@ -1159,9 +1163,10 @@ export default function PreviewLabPage() {
                   {formStep === 3 && (
                     <div>
                       <div className="form-group">
-                        <label className="form-label">Style & colors ("describe how you want it to look/feel")</label>
+                        <label className="form-label">Style & colors<span>*</span> <span style={{fontWeight:400,color:'#94a3b8',fontSize:'0.75rem'}}>(describe your vibe — dark, minimal, bold, etc.)</span></label>
                         <textarea
-                          placeholder="Ex: Sleek light mode with clean gray borders and periwinkle accents..."
+                          required
+                          placeholder="Ex: Clean dark mode, periwinkle accents, minimal and modern..."
                           className="form-textarea"
                           value={mainForm.styleColors}
                           onChange={(e) => setMainForm({ ...mainForm, styleColors: e.target.value })}
@@ -1169,7 +1174,7 @@ export default function PreviewLabPage() {
                       </div>
 
                       <div className="form-group">
-                        <label className="form-label">Reference website ("any site you love the look of")</label>
+                        <label className="form-label">Reference site <span style={{fontWeight:400,color:'#94a3b8',fontSize:'0.75rem'}}>(optional — any site you love the look of)</span></label>
                         <input
                           type="text"
                           placeholder="Ex: stripe.com, vercel.com"
@@ -1208,7 +1213,7 @@ export default function PreviewLabPage() {
                     ) : (
                       <button
                         type="submit"
-                        disabled={mainLoading}
+                        disabled={mainLoading || (formStep === 3 && !mainForm.styleColors.trim())}
                         className="stepper-btn btn-active"
                         style={{ marginLeft: 'auto' }}
                       >
