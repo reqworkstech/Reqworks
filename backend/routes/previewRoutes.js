@@ -35,7 +35,7 @@ const sendTelegramAlert = (message) => {
  */
 router.post('/submit', previewLimiter, async (req, res) => {
   try {
-    const { name, email, website, businessDescription, selectedSections, styleColors, referenceWebsite, honeypot } = req.body;
+    const { name, email, website, businessDescription, selectedSections = [], styleColors, referenceWebsite, honeypot } = req.body;
 
     // 1. Silent honeypot rejection (bots)
     if (honeypot) {
@@ -46,8 +46,6 @@ router.post('/submit', previewLimiter, async (req, res) => {
     if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'Name is required.' });
     if (!email || !email.trim() || !/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ success: false, error: 'Valid email is required.' });
     if (!businessDescription || !businessDescription.trim()) return res.status(400).json({ success: false, error: 'Business description is required.' });
-    if (!selectedSections || !Array.isArray(selectedSections) || selectedSections.length === 0) return res.status(400).json({ success: false, error: 'Please select at least one website section.' });
-    if (selectedSections.length > 3) return res.status(400).json({ success: false, error: 'Maximum 3 sections allowed.' });
 
     // No strict URL validation — website and referenceWebsite are optional freeform fields
 
@@ -121,15 +119,16 @@ router.post('/submit', previewLimiter, async (req, res) => {
           </tr>
         </table>
 
+        ${selectedSections && selectedSections.length > 0 ? `
         <!-- Sections badges -->
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
           <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;margin:0 0 8px 0;">Sections Selected</p>
           <div>${selectedSections.map(s => `<span style="display:inline-block;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin:2px 4px 2px 0;">${s}</span>`).join('')}</div>
-        </div>
+        </div>` : ''}
 
         <!-- Business description -->
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
-          <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;margin:0 0 6px 0;">Business Description</p>
+          <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;margin:0 0 6px 0;">Business Description & Ideas</p>
           <p style="font-size:13px;color:#cbd5e1;margin:0;line-height:1.6;">${businessDescription.replace(/\n/g, '<br/>')}</p>
         </div>
 
@@ -158,17 +157,17 @@ router.post('/submit', previewLimiter, async (req, res) => {
         `*Name:* ${name}\n` +
         `*Email:* ${email}\n` +
         `*Website:* ${website || '—'}\n` +
-        `*Sections:* ${selectedSections.join(', ')}\n` +
+        `${selectedSections && selectedSections.length > 0 ? `*Sections:* ${selectedSections.join(', ')}\n` : ''}` +
         `*Style:* ${styleColors || '—'}\n` +
         `*Ref Site:* ${referenceWebsite || '—'}\n\n` +
-        `📝 *Description:*\n${businessDescription.slice(0, 200)}${businessDescription.length > 200 ? '...' : ''}\n\n` +
+        `📝 *Description & Ideas:*\n${businessDescription.slice(0, 200)}${businessDescription.length > 200 ? '...' : ''}\n\n` +
         `👉 [Open Dashboard](${process.env.CLIENT_URL || 'https://www.reqworks.in'}/admin/dashboard)`;
 
       sendTelegramAlert(telegramMsg);
 
       // Dev console log
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`\n🧪 [PREVIEW LAB SUBMISSION]\nName: ${name} | Email: ${email} | Sections: ${selectedSections.join(', ')}\n`);
+        console.log(`\n🧪 [PREVIEW LAB SUBMISSION]\nName: ${name} | Email: ${email}\n`);
       }
     } catch (adminErr) {
       console.error('[PreviewLab] Admin notification error:', adminErr);

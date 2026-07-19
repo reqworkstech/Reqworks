@@ -22,7 +22,6 @@ export default function PreviewLabPage() {
     referenceWebsite: '',
     honeypot: ''
   });
-  const [selectedSections, setSelectedSections] = useState([]);
   const [mainLoading, setMainLoading] = useState(false);
   const [mainSuccess, setMainSuccess] = useState(false);
   const [mainError, setMainError] = useState('');
@@ -54,13 +53,6 @@ export default function PreviewLabPage() {
     { type: 'video', src: '/images/Vedio.mp4' }
   ];
 
-  const SECTIONS = [
-    { id: 'hero', label: 'Homepage / hero', desc: 'Hero statement, value header, primary CTA.' },
-    { id: 'about', label: 'About / services', desc: 'Explains what you offer and who you serve.' },
-    { id: 'portfolio', label: 'Portfolio / testimonials', desc: 'Case studies, visual review grids & reviews.' },
-    { id: 'contact', label: 'Contact / footer', desc: 'Conversion-optimized capture & links.' }
-  ];
-
   // Auto-scroll carousel slides every 5 seconds (PAUSES when video is active)
   useEffect(() => {
     const isVideoActive = CAROUSEL_SLIDES[carouselIndex].type === 'video';
@@ -80,16 +72,6 @@ export default function PreviewLabPage() {
     setCarouselIndex((prev) => (prev - 1 + CAROUSEL_SLIDES.length) % CAROUSEL_SLIDES.length);
   };
 
-  const handleSectionToggle = (label) => {
-    if (selectedSections.includes(label)) {
-      setSelectedSections(selectedSections.filter(s => s !== label));
-    } else {
-      if (selectedSections.length < 3) {
-        setSelectedSections([...selectedSections, label]);
-      }
-    }
-  };
-
   const validateStep = (step) => {
     setMainError('');
     if (step === 1) {
@@ -104,10 +86,6 @@ export default function PreviewLabPage() {
     } else if (step === 2) {
       if (!mainForm.businessDescription.trim()) {
         triggerToast('Business description is required.', 'error');
-        return false;
-      }
-      if (selectedSections.length === 0) {
-        triggerToast('Select at least one website section.', 'error');
         return false;
       }
     } else if (step === 3) {
@@ -141,7 +119,7 @@ export default function PreviewLabPage() {
       const response = await fetch('/api/preview-lab/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...mainForm, selectedSections })
+        body: JSON.stringify(mainForm)
       });
 
       const data = await response.json();
@@ -159,7 +137,6 @@ export default function PreviewLabPage() {
           referenceWebsite: '',
           honeypot: ''
         });
-        setSelectedSections([]);
       } else {
         setMainError(data.error || 'Something went wrong. Please try again.');
         triggerToast(data.error || 'Something went wrong. Please try again.', 'error');
@@ -617,59 +594,7 @@ export default function PreviewLabPage() {
         }
         .form-textarea {
           resize: vertical;
-          min-height: 80px;
-        }
-
-        .sections-items-list {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        .section-item-card {
-          background: #ffffff;
-          border: 1px solid #cbd5e1;
-          border-radius: 6px;
-          padding: 10px 14px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          transition: all 0.2s;
-        }
-        .section-item-card:hover {
-          background: #f8fafc;
-          border-color: #94a3b8;
-        }
-        .section-item-card.selected {
-          background: #f5f3ff;
-          border-color: #4f46e5;
-        }
-        .section-item-card.disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-        }
-        .section-item-label {
-          font-weight: 700;
-          font-size: 0.8rem;
-          color: #0f172a;
-        }
-        .section-item-desc {
-          font-size: 0.72rem;
-          color: #64748b;
-          margin-top: 2px;
-        }
-        .check-box-element {
-          width: 14px;
-          height: 14px;
-          border-radius: 3px;
-          border: 1px solid #cbd5e1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .section-item-card.selected .check-box-element {
-          background: #4f46e5;
-          border-color: #4f46e5;
+          min-height: 100px;
         }
 
         /* Stepper buttons (highly rounded gray buttons matching screenshot button exactly) */
@@ -995,7 +920,7 @@ export default function PreviewLabPage() {
                   </div>
                   <div className="vertical-step-item">
                     <span className="vertical-step-bullet">2</span>
-                    <span className="vertical-step-text">Choose scope</span>
+                    <span className="vertical-step-text">Describe ideas</span>
                   </div>
                   <div className="vertical-step-item">
                     <span className="vertical-step-bullet">3</span>
@@ -1102,60 +1027,20 @@ export default function PreviewLabPage() {
                     </div>
                   )}
 
-                  {/* STEP 2: Scope Selection */}
+                  {/* STEP 2: Describe Ideas */}
                   {formStep === 2 && (
                     <div>
                       <div className="form-group">
-                        <label className="form-label">Business description (what you do)<span>*</span></label>
+                        <label className="form-label">Describe your business & project ideas<span>*</span></label>
                         <textarea
                           required
-                          placeholder="Ex: D2C mouth-freshener e-commerce platform..."
+                          placeholder="Tell us about your business, project goals, features you need, or any specific ideas you have in mind..."
                           className="form-textarea"
+                          rows={6}
                           value={mainForm.businessDescription}
                           onChange={(e) => setMainForm({ ...mainForm, businessDescription: e.target.value })}
                         />
                       </div>
-
-                      <div className="form-group">
-                        <label className="form-label">
-                          Select Sections<span>*</span>
-                          <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 8 }}>
-                            ({selectedSections.length}/3 selected)
-                          </span>
-                        </label>
-                        <div className="sections-items-list">
-                          {SECTIONS.map((sec) => {
-                            const isSelected = selectedSections.includes(sec.label);
-                            const isMaxReached = selectedSections.length >= 3;
-                            const isDisabled = isMaxReached && !isSelected;
-
-                            return (
-                              <button
-                                type="button"
-                                key={sec.id}
-                                onClick={() => handleSectionToggle(sec.label)}
-                                disabled={isDisabled}
-                                className={`section-item-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
-                                style={{ width: '100%', textAlign: 'left' }}
-                              >
-                                <div style={{ textAlign: 'left' }}>
-                                  <div className="section-item-label">{sec.label}</div>
-                                  <div className="section-item-desc">{sec.desc}</div>
-                                </div>
-                                <div className="check-box-element">
-                                  {isSelected && <Check size={8} style={{ color: '#ffffff' }} />}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {selectedSections.length === 3 && (
-                          <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 6 }}>
-                            Max 3 reached — deselect one to change your pick.
-                          </p>
-                        )}
-                      </div>
-
                     </div>
                   )}
 
@@ -1203,7 +1088,7 @@ export default function PreviewLabPage() {
                       <button
                         type="button"
                         onClick={handleNextStep}
-                        disabled={(formStep === 1 && (!mainForm.name.trim() || !mainForm.email.trim())) || (formStep === 2 && (!mainForm.businessDescription.trim() || selectedSections.length === 0))}
+                        disabled={(formStep === 1 && (!mainForm.name.trim() || !mainForm.email.trim())) || (formStep === 2 && !mainForm.businessDescription.trim())}
                         className="stepper-btn btn-active"
                         style={{ marginLeft: 'auto' }}
                       >
